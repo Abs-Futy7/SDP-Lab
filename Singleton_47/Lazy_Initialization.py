@@ -1,15 +1,17 @@
 import pymongo
 import threading
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class LazySingletonMongoDB:
     _instance = None  # Starts as None — nothing created yet
 
     def __init__(self):
         # No guard here; each thread that slips through creates its OWN client
-        self._client = pymongo.MongoClient(
-            "mongodb+srv://aditya_db_user:5n7RSM9LcFT52dhw@cluster0.4jwnhmb.mongodb.net/?appName=Cluster0"
-        )
+        self._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
 
     @classmethod
     def get_instance(cls):

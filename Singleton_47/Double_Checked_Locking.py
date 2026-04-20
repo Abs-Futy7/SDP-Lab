@@ -1,6 +1,10 @@
 import pymongo
 import threading
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class DoubleCheckedSingletonMongoDB:
     _instance = None
@@ -15,9 +19,7 @@ class DoubleCheckedSingletonMongoDB:
         return cls._instance
 
     def __init__(self):
-        self._client = pymongo.MongoClient(
-            "mongodb+srv://aditya_db_user:5n7RSM9LcFT52dhw@cluster0.4jwnhmb.mongodb.net/?appName=Cluster0"
-        )
+        self._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
 
     def get_database(self, db_name="testdb"):
         return self._client[db_name]

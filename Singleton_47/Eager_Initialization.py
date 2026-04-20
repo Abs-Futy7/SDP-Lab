@@ -1,6 +1,10 @@
 import pymongo
 import threading
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class EagerSingletonMongoDB:
     _instance = None  # Will hold the single instance
@@ -8,9 +12,7 @@ class EagerSingletonMongoDB:
     # The ONE instance is created at class definition time
     class _Singleton:
         def __init__(self):
-            self._client = pymongo.MongoClient(
-                "mongodb+srv://aditya_db_user:5n7RSM9LcFT52dhw@cluster0.4jwnhmb.mongodb.net/?appName=Cluster0"
-            )
+            self._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
 
         def get_database(self, db_name="testdb"):
             return self._client[db_name]
