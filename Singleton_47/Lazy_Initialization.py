@@ -19,7 +19,7 @@ class LazySingletonMongoDB:
             # Artificial delay to widen the race window so multiple threads
             # can all pass the None-check before any of them assigns _instance.
             time.sleep(0.05)
-            cls._instance = LazySingletonMongoDB()
+            cls._instance = cls()
         return cls._instance               # May return DIFFERENT objects!
 
     def get_database(self, db_name="testdb"):

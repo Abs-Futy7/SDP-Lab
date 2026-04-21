@@ -7,17 +7,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class BillPughSingletonMongoDB:
-    _instance = None
-    _lock = threading.Lock()
+    _holder_lock = threading.Lock()
 
-    def __new__(cls):
-        # __new__ is called BEFORE __init__ — controls whether a new object is made
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super().__new__(cls)  # Actually create object
-                    cls._instance._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
-        return cls._instance  # Always return the same object
+    class _SingletonHolder:
+        # Inner holder: stores the single instance lazily on first access.
+        INSTANCE = None
+
+    @classmethod
+    def _create_instance(cls):
+        instance = object.__new__(cls)
+        instance._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
+        return instance
+
+    @classmethod
+    def get_instance(cls):
+        if cls._SingletonHolder.INSTANCE is None:
+            with cls._holder_lock:
+                if cls._SingletonHolder.INSTANCE is None:
+                    cls._SingletonHolder.INSTANCE = cls._create_instance()
+        return cls._SingletonHolder.INSTANCE
 
     def get_database(self, db_name="testdb"):
         return self._client[db_name]
@@ -29,9 +37,9 @@ class BillPughSingletonMongoDB:
         self._client.close()
 
 
-# Usage — looks like normal class instantiation!
-#m1 = BillPughSingletonMongoDB()
-#m2 = BillPughSingletonMongoDB()
+# Usage
+#m1 = BillPughSingletonMongoDB.get_instance()
+#m2 = BillPughSingletonMongoDB.get_instance()
 #print(id(m1) == id(m2))  # True
 
 # ── Experiment 1: Instance Validation ──────────────────────────
@@ -41,7 +49,7 @@ def test_instance_validation(SingletonClass, name, use_enum=False):
     if use_enum:
         instances = [SingletonClass.INSTANCE for _ in range(5)]
     else:
-        instances = [SingletonClass() for _ in range(5)]
+        instances = [SingletonClass.get_instance() for _ in range(5)]
 
     ids = [id(i) for i in instances]
     print(f"IDs: {ids}")
@@ -58,7 +66,7 @@ def test_thread_safety(SingletonClass, name, use_enum=False):
         if use_enum:
             results.append(id(SingletonClass.INSTANCE))
         else:
-            results.append(id(SingletonClass()))
+            results.append(id(SingletonClass.get_instance()))
 
     threads = [threading.Thread(target=get_inst) for _ in range(10)]
     for t in threads: t.start()
@@ -78,7 +86,7 @@ def test_performance(SingletonClass, name, use_enum=False):
     if use_enum:
         _ = SingletonClass.INSTANCE
     else:
-        _ = SingletonClass()
+        _ = SingletonClass.get_instance()
     init_time = time.perf_counter() - start
     print(f"Init time: {init_time:.6f}s")
 
@@ -88,7 +96,7 @@ def test_performance(SingletonClass, name, use_enum=False):
         if use_enum:
             _ = SingletonClass.INSTANCE
         else:
-            _ = SingletonClass()
+            _ = SingletonClass.get_instance()
     access_time = time.perf_counter() - start
     print(f"1000x access time: {access_time:.6f}s")
 

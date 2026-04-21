@@ -7,28 +7,27 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class EagerSingletonMongoDB:
-    _instance = None  # Will hold the single instance
+    _instance = None
 
-    # The ONE instance is created at class definition time
-    class _Singleton:
-        def __init__(self):
-            self._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
+    def __init__(self):
+        self._client = pymongo.MongoClient(os.getenv("MONGO_URI"))
 
-        def get_database(self, db_name="testdb"):
-            return self._client[db_name]
+    def get_database(self, db_name="testdb"):
+        return self._client[db_name]
 
-        def get_collection(self, db_name, col_name):
-            return self._client[db_name][col_name]
+    def get_collection(self, db_name, col_name):
+        return self._client[db_name][col_name]
 
-        def close_connection(self):
-            self._client.close()
-
-    # Created ONCE here — at class load, not when you call it
-    _instance = _Singleton()
+    def close_connection(self):
+        self._client.close()
 
     @classmethod
     def get_instance(cls):
         return cls._instance  # Always returns the already-created instance
+
+
+# Eager: create the singleton at class load time.
+EagerSingletonMongoDB._instance = EagerSingletonMongoDB()
 
 
 # Usage
